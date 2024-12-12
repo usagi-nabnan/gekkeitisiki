@@ -1,0 +1,286 @@
+
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生理周期シミュレーター</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 20px; }
+        .day { padding: 10px; border: 1px solid #ccc; text-align: center; }
+        .menstrual { background-color: #ffcccc; }
+        .ovulation { background-color: #cce5ff; }
+        .normal { background-color: #f9f9f9; }
+        .luteal { background-color: #e8e8ff; }
+        .light { border: 2px dashed #ff9999; }
+        .medium { border: 2px solid #ff6666; }
+        .heavy { border: 2px solid #ff0000; }
+        .discharge { font-style: italic; color: #888; }
+        .symptom { font-style: italic; color: #444; margin-top: 5px; font-size: 0.8em; }
+        .product-suggestion { font-size: 0.8em; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>生理周期シミュレーター</h1>
+    <form id="cycle-form">
+        <label for="start-date">生理開始日を入力してください:</label>
+        <input type="date" id="start-date" required>
+        <button type="submit">生成</button>
+    </form>
+    <button id="add-year-btn" style="margin-top: 10px;" disabled>一年分追加</button>
+    <button id="save-btn" style="margin-top: 10px;" disabled>データ保存</button>
+    <input type="file" id="file-input" style="margin-top: 10px;" />
+    <div id="calendar-container"></div>
+
+    <script>
+        function isLeapYear(year) {
+            return (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+        }
+
+        function getDaysInMonth(year, month) {
+            if (month === 1) { // February
+                return isLeapYear(year) ? 29 : 28;
+            }
+            return [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month];
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getMenstrualFlow(dayOfCycle) {
+            return ['light', 'medium', 'heavy'][getRandomInt(0, 2)];
+        }
+
+        function getDischargeQuality(dayOfCycle) {
+            const qualities = ['卵白状', '水状', 'クリーム状', '粘着状', '乾燥', 'なし'];
+            return qualities[getRandomInt(0, qualities.length - 1)];
+        }
+
+        function getPsychologicalSymptoms(dayOfCycle) {
+            const symptoms = [
+                'イライラしやすい', 
+                '不安感が強くなる', 
+                '気分が落ち込む', 
+                '集中力が低下する', 
+                '特にありません'
+            ];
+            return symptoms[getRandomInt(0, symptoms.length - 1)];
+        }
+
+        function getHormonalBalanceSymptoms(dayOfCycle) {
+            if (dayOfCycle >= 1 && dayOfCycle <= 7) {
+                return 'エストロゲンが増加しているので、気分が安定しやすい';
+            } else if (dayOfCycle >= 14 && dayOfCycle <= 21) {
+                return '黄体ホルモンが分泌されている時期。体温が上がり、少しだるさを感じるかもしれません';
+            } else if (dayOfCycle >= 22 && dayOfCycle <= 28) {
+                return 'PMS（生理前症候群）により、体調不良や心理的症状が現れやすい';
+            }
+            return 'ホルモンバランスは安定しています';
+        }
+
+        function getProductSuggestion(dayOfCycle) {
+            if (dayOfCycle >= 1 && dayOfCycle <= 7) {
+                return '生理用品：ナプキン（普通または多い日用）タンポン';
+            } else if (dayOfCycle >= 14 && dayOfCycle <= 21) {
+                return '生理用品：おりものシート、軽い日用ナプキン';
+            } else if (dayOfCycle >= 22 && dayOfCycle <= 28) {
+                return '生理用品：おりものシート、タンポン（軽い量の方用）';
+            }
+            return '生理用品：軽い日用ナプキン';
+        }
+
+        function generateCycle(startDate, daysToGenerate = 365) {
+            const start = new Date(startDate);
+            const dates = [];
+            let currentDay = new Date(start);
+
+            while (dates.length < daysToGenerate) {
+                const cycleDays = getRandomInt(25, 35);
+                const menstrualDays = getRandomInt(3, 7);
+
+                for (let i = 0; i < cycleDays && dates.length < daysToGenerate; i++) {
+                    const dayOfCycle = (i % cycleDays) + 1;
+                    const entry = {
+                        date: new Date(currentDay).toISOString().split('T')[0],
+                        type: '',
+                        discharge: '',
+                        flow: '',
+                        symptom: '',
+                        hormonalSymptom: '',
+                        productSuggestion: ''
+                    };
+
+                    if (dayOfCycle >= 1 && dayOfCycle <= menstrualDays) {
+                        entry.type = 'menstrual';
+                        entry.flow = getMenstrualFlow(dayOfCycle);
+                        entry.discharge = '月経あり';
+                    } else if (dayOfCycle >= 6 && dayOfCycle <= 13) {
+                        entry.type = 'normal';
+                        entry.discharge = getDischargeQuality(dayOfCycle);
+                    } else if (dayOfCycle === 14) {
+                        entry.type = 'ovulation';
+                        entry.discharge = '卵白状のおりもの';
+                    } else if (dayOfCycle >= 15 && dayOfCycle <= 28) {
+                        entry.type = 'luteal';
+                        entry.discharge = getDischargeQuality(dayOfCycle);
+                    }
+
+                    entry.symptom = getPsychologicalSymptoms(dayOfCycle);
+                    entry.hormonalSymptom = getHormonalBalanceSymptoms(dayOfCycle);
+                    entry.productSuggestion = getProductSuggestion(dayOfCycle);
+
+                    dates.push(entry);
+
+                    const daysInMonth = getDaysInMonth(currentDay.getFullYear(), currentDay.getMonth());
+                    if (currentDay.getDate() === daysInMonth) {
+                        currentDay.setDate(1);
+                        currentDay.setMonth(currentDay.getMonth() + 1);
+                    } else {
+                        currentDay.setDate(currentDay.getDate() + 1);
+                    }
+                }
+            }
+
+            return dates;
+        }
+
+     
+    function displayCalendar(dates) {
+        const container = document.getElementById('calendar-container');
+        container.innerHTML = '';
+
+        const calendar = document.createElement('div');
+        calendar.className = 'calendar';
+
+        dates.forEach(entry => {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = `day ${entry.type} ${entry.flow}`;
+            dayDiv.textContent = entry.date;
+
+            if (entry.type === 'menstrual') {
+                const flowLabel = document.createElement('span');
+                flowLabel.style.display = 'block';
+                flowLabel.style.fontSize = '0.8em';
+                flowLabel.textContent = {
+                    'light': '軽い',
+                    'medium': '普通',
+                    'heavy': '多い'
+                }[entry.flow];
+                dayDiv.appendChild(flowLabel);
+                dayDiv.appendChild(document.createElement('br')); // 改行を追加
+            }
+
+            if (entry.discharge !== '') {
+                const dischargeLabel = document.createElement('span');
+                dischargeLabel.className = 'discharge';
+                dischargeLabel.style.fontSize = '0.8em';
+                dischargeLabel.textContent = `おりもの: ${entry.discharge}`;
+                dayDiv.appendChild(dischargeLabel);
+                dayDiv.appendChild(document.createElement('br')); // 改行を追加
+            }
+
+            const symptomLabel = document.createElement('span');
+            symptomLabel.className = 'symptom';
+            symptomLabel.textContent = `心理的症状: ${entry.symptom}`;
+            dayDiv.appendChild(symptomLabel);
+            dayDiv.appendChild(document.createElement('br')); // 改行を追加
+
+            const hormonalLabel = document.createElement('span');
+            hormonalLabel.className = 'symptom';
+            hormonalLabel.textContent = `ホルモンバランス: ${entry.hormonalSymptom}`;
+            dayDiv.appendChild(hormonalLabel);
+            dayDiv.appendChild(document.createElement('br')); // 改行を追加
+
+            const productLabel = document.createElement('span');
+            productLabel.className = 'product-suggestion';
+            productLabel.textContent = `おすすめの生理用品: ${entry.productSuggestion}`;
+            dayDiv.appendChild(productLabel);
+
+            calendar.appendChild(dayDiv);
+        });
+
+        container.appendChild(calendar);
+    }
+
+
+
+        function saveCycleToFile(cycleData) {
+            const text = cycleData.map(entry => {
+                return `${entry.date}: ${entry.type} (${entry.flow}) - ${entry.discharge} - ${entry.symptom} - ${entry.hormonalSymptom} - ${entry.productSuggestion}`;
+            }).join('\n');
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'cycle_data.txt';
+            link.click();
+        }
+
+        function loadCycleFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const content = event.target.result.split('\n').map(line => {
+            const parts = line.split(':');
+            if (parts.length < 2) return null;
+            const date = parts[0].trim();
+            const details = parts[1].trim().split('-');
+            return {
+                date: date,
+                type: details[0].split(' ')[0].trim(),
+                flow: details[0].includes('(') ? details[0].match(/\((.*?)\)/)[1].trim() : '',
+                discharge: details[1].trim(),
+                symptom: details[2].trim(),
+                hormonalSymptom: details[3].trim(),
+                productSuggestion: details[4].trim()
+            };
+        }).filter(entry => entry !== null);
+
+        displayCalendar(content);
+        document.getElementById('add-year-btn').disabled = false;
+        document.getElementById('save-btn').disabled = false;
+    };
+    reader.readAsText(file);
+}
+
+
+        let currentData = [];
+
+        document.getElementById('cycle-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const startDate = document.getElementById('start-date').value;
+
+            if (!startDate) {
+                alert('開始日を入力してください。');
+                return;
+            }
+
+            currentData = generateCycle(startDate);
+            displayCalendar(currentData);
+            document.getElementById('add-year-btn').disabled = false;
+            document.getElementById('save-btn').disabled = false;
+        });
+
+        document.getElementById('add-year-btn').addEventListener('click', function() {
+            const lastDate = currentData[currentData.length - 1].date;
+            const additionalData = generateCycle(lastDate);
+            currentData = currentData.concat(additionalData);
+            displayCalendar(currentData);
+        });
+
+        document.getElementById('save-btn').addEventListener('click', function() {
+            saveCycleToFile(currentData);
+        });
+
+        document.getElementById('file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadCycleFromFile(file);
+            }
+        });
+    </script>
+</body>
+</html>
